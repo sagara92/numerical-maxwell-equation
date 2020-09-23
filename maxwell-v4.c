@@ -66,7 +66,7 @@ int main()
 
 			B[i] = Bave[i] - c * dEdx[i] * dt; /*Lax-Friedrichs Method*/
 
-			}
+		}
 		t += dt;			
 	}
 	for (int i = 0; i < NUM_CELLS; ++i)
