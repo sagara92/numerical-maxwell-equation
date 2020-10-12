@@ -32,8 +32,8 @@ int main()
 	for (int i = 0; i < NUM_CELLS; ++i)
 	{
 		x = xi + i*dx;
-		E[i] = E0 * sin (k*x - w*ti);
-		B[i] = B0 * sin (k*(x+0.5*dx) - w*(ti+0.5*dt));
+		E[i] = E0 * sin (k*x + w*ti);
+		B[i] = B0 * sin (k*(x+0.5*dx) + w*(ti+0.5*dt));
 	}
 	//-----------------------------------------//
 
@@ -49,8 +49,8 @@ int main()
 		for (int i = 0; i < NUM_CELLS; ++i)
 		{
 			x = xi + i*dx;
-			E_r[i] = E0 * sin (k*x - w*t);
-			B_r[i] = B0 * sin (k*(x+0.5*dx) - w*(t+0.5*dt));
+			E_r[i] = E0 * sin (k*x + w*t);
+			B_r[i] = B0 * sin (k*(x+0.5*dx) + w*(t+0.5*dt));
 		}
 		//------------------------------------//
 
@@ -65,7 +65,7 @@ int main()
 			double Bminus = B[(i-1+NUM_CELLS)%NUM_CELLS];
 		
 			dBdx[i] = (Bplus - Bminus)/dx;
-			E[i] -= c * dBdx[i] * dt;
+			E[i] += c * dBdx[i] * dt;
 			
 		}
 
@@ -76,7 +76,7 @@ int main()
 			double Eminus = E[i];
 
 			dEdx[i] = (Eplus - Eminus)/dx;
-			B[i] -= c * dEdx[i] * dt;
+			B[i] += c * dEdx[i] * dt;
 		}
 		
 		t+=dt;
@@ -103,6 +103,9 @@ int main()
 	double L2_E = sqrt(E2)/(xf-xi);
 	double L2_B = sqrt(B2)/(xf-xi);
 	printf("Integrated error on E and B are, %f \t %f\n", L2_E, L2_B);
+
+	//-----------------------------------------------------------------//
+	/*Define function*/
 
 	//----------------------------------------------------------------//
 	/*Output to a file*/

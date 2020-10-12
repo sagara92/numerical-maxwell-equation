@@ -22,7 +22,7 @@ int main()
 	xf = 1.0;
 	c  = 1.0;
 	ti = 0.0;
-	tf = 5.0;	/* Time of evolution in seconds*/
+	tf = 0.1;	/* Time of evolution in seconds*/
 	k  = 2.0 * M_PI /(xf - xi);
 	w  = k * c;
 	dx = (xf - xi)/(NUM_CELLS - 1);
@@ -35,8 +35,8 @@ int main()
 	{
 		x = xi + i*dx;
 		y = yi + (i+0.5)*dx;
-		E[i] = E0 * sin (k*x - w*t);
-		B[i] = B0 * sin (k*y - w*t);
+		E[i] = E0 * sin (k*x + w*t);
+		B[i] = B0 * sin (k*y + w*t);
 	}
 
 
@@ -59,12 +59,12 @@ int main()
 			dBdx[i] = (Bplus - Bminus)/(2.0 *dx);
 			Eave[i] = (0.9*Eplus + 0.1*Eminus);/*Weighted average*/
 
-			E[i] = Eave[i] - c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
+			E[i] = Eave[i] + c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
 		
 			dEdx[i] = (Eplus - Eminus)/(2.0 *dx);
 			Bave[i] = (0.9*Bplus + 0.1*Bminus);/*Weighted average*/
 
-			B[i] = Bave[i] - c * dEdx[i] * dt; /*Lax-Friedrichs Method*/
+			B[i] = Bave[i] + c * dEdx[i] * dt; /*Lax-Friedrichs Method*/
 
 		}
 		t += dt;			
@@ -74,8 +74,8 @@ int main()
 		/*Target value of E and B*/
 		x = xi + i*dx;
 		y = yi + (i+0.5)*dx;
-		E_r[i] = E0 * sin (k*x - w*dt); /*Real value of E*/
-		B_r[i] = B0 * sin (k*y - w*dt);	/*Real value of B*/	
+		E_r[i] = E0 * sin (k*x + w*dt); /*Real value of E*/
+		B_r[i] = B0 * sin (k*y + w*dt);	/*Real value of B*/	
 
 		/*Calculating L2 errors in each position*/			
 		Diff_E[i] = E_r[i] - E[i];		/*Difference in the calculated value and real value*/	

@@ -64,8 +64,8 @@ int main()
 
         for (int i = 0; i < NUM_CELLS; ++i)
         {
-            E[i] -= c * dBdx[i] * dt;
-            B[i] -= c * dEdx[i] * dt;
+            E[i] += c * dBdx[i] * dt;
+            B[i] += c * dEdx[i] * dt;
         }
 
         t += dt;

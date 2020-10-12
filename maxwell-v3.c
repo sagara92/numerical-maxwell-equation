@@ -26,14 +26,14 @@ int main()
 	for (int i = 0; i < NUM_CELLS; i+=2)
 	{
 		x = xi + i*dx;
-		E[i] = E0 * sin (k*x - w*t);
+		E[i] = E0 * sin (k*x + w*t);
 		
 	}
 	for (int i = 1; i < NUM_CELLS; i+=2)
 	{
 		x = xi + i*dx;
 	
-		B[i] = B0 * sin (k*x - w*t);
+		B[i] = B0 * sin (k*x + w*t);
 	}
 	/*Time evolution of the field and position*/
 
@@ -56,7 +56,7 @@ int main()
 			Eave[i] = (Eplus + Eminus)/2.0;}
 		for (int i = 0; i < NUM_CELLS; i+=2)
 		{
-			E[i] = Eave[i] - c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
+			E[i] = Eave[i] + c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
 		}
 
 		double dEdx[NUM_CELLS];
@@ -78,7 +78,7 @@ int main()
 		for (int i = 1; i < NUM_CELLS; i+=2)
 		{
 			
-			B[i] = Bave[i] - c * dEdx[i] * dt;
+			B[i] = Bave[i] + c * dEdx[i] * dt;
 		}
 		t += dt;
 	}

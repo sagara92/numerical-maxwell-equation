@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include <math.h>
-#define NUM_CELLS 1000
+#define NUM_CELLS 10000
 
 
 
@@ -8,14 +8,14 @@ int main()
 {
 	double x, dx, xi, xf, E0, B0, k, ti, w, c, tf, dt, t;
 	double E[NUM_CELLS], B[NUM_CELLS];
-	E0 = 5.0;
+	E0 = 1.0;
 	B0 = 1.0;
 	xi = 0.0;
 	t  = 0.0;
 	xf = 1.0;
 	c  = 1.0;
 	ti = 0.0;
-	tf = 10.0;/*10 second evolution*/
+	tf = 0.1;/*10 second evolution*/
 	k  = 2.0 * M_PI /(xf - xi);
 	w  = k * c;
 	dx = (xf - xi)/(NUM_CELLS - 1);
@@ -26,8 +26,8 @@ int main()
 	for (int i = 0; i < NUM_CELLS; ++i)
 	{
 		x = xi + i*dx;
-		E[i] = E0 * sin (k*x - w*t);
-		B[i] = B0 * sin (k*x - w*t);
+		E[i] = E0 * sin (k*x + w*t);
+		B[i] = B0 * sin (k*x + w*t);
 	}
 
 	/*Time evolution of the field*/
@@ -52,8 +52,8 @@ int main()
 		}
 		for (int i = 0; i < NUM_CELLS; ++i)
 		{
-			E[i] = Eave[i] - c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
-			B[i] = Bave[i] - c * dEdx[i] * dt;
+			E[i] = Eave[i] + c * dBdx[i] * dt; /*Lax-Friedrichs Method*/
+			B[i] = Bave[i] + c * dEdx[i] * dt;
 		}
 		t += dt;
 	}
