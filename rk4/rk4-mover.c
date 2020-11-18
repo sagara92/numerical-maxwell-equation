@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include <math.h>
-#define num_steps_per_orbit 1000
+#define num_steps_per_orbit 300
 
 static const double speed_of_light          =  1.0;
 static const double tfinal                  =  4.0 * M_PI;
@@ -45,22 +45,19 @@ void func(const double t,const double u_n[4], const double E[4], const double B[
     double e = charge_of_particle;
     double m = mass_of_particle;
     double q_to_m = e / m;
-    double force_e[4], force_m[4];
     double v_cross_B[4];
 
     cross(u_n, B, v_cross_B);
     for (int d = 1; d <= 3; ++d)
       {
-          force_e[d] = q_to_m * E[d];
-          force_m[d] = q_to_m * v_cross_B[d];
+          force[d] = q_to_m * (E[d] + v_cross_B[d]);
       }
-    sum(force_e, force_m, force);
 }
 
 
-void push_particle(const double E[4], const double B[4], double x[4], double u_n[4], double dt)
+void push_particle(const double E[4], const double B[4], const double dt, double x[4], double u_n[4])
 {
-    double k1[4], k2[4], k3[4], k4[4], ktemp[4], unpk[4], u_np1[4];
+    double k1[4], k2[4], k3[4], k4[4], ktemp[4], unpk[4];
     
     func(x[0], u_n, E, B, k1); //k1 calculation
     for (int d = 1; d <= 3; ++d)
@@ -89,15 +86,14 @@ void push_particle(const double E[4], const double B[4], double x[4], double u_n
     x[0] += dt * 0.5;
 
     func(x[0], unpk, E, B, k4);//k4 calculation
-
+    //printf("%f %f %f %f\n%f\n", u_n[0], u_n[1], u_n[2], u_n[3], sqrt(dot(u_n,u_n)));
     for (int d = 1; d <= 3; ++d) //updating the position using the velocity at time t
-        x[d] += dt * u_n[d];
+        x[d] += dt * u_n[d] * u_n[0];
 
     for (int d = 0; d <= 3; ++d) // updating the velocity for time t + dt
     {
         u_n[d] += dt * (k1[d] + 2.0 * k2[d] + 2.0 * k3[d] + k4[d]) / 6.0;
     }
-
     x[0] += dt;
 }
 
@@ -156,8 +152,8 @@ void exact_particle_velocity(double t, double velocity[4])
 {
     double g = particle_lorentz_factor;
     velocity[0] = g;
-    velocity[1] = g * particle_velocity() * sin(larmor_frequency() * t) * -1.0;
-    velocity[2] = g * particle_velocity() * cos(larmor_frequency() * t) * +1.0;
+    velocity[1] = particle_velocity() * sin(larmor_frequency() * t) * -1.0;  //i removed g *   
+    velocity[2] = particle_velocity() * cos(larmor_frequency() * t) * +1.0;  //i removed g * 
     velocity[3] = 0.0;
 }
 
@@ -180,7 +176,7 @@ struct Particle advance(struct Particle state)
 {
     double dt = larmor_period() / num_steps_per_orbit;
 
-    push_particle(electric_field, magnetic_field, state.x, state.u_n, dt);
+    push_particle(electric_field, magnetic_field, dt, state.x, state.u_n);
 
     return state;
 }
@@ -195,16 +191,17 @@ int main()
     struct Particle state = initial_state();
 
     FILE* outfile = fopen("solution.dat", "w");
-
     while (state.x[0] < tfinal)
     {
         state = advance(state);
-
+        double vel2 = dot(state.u_n, state.u_n);
+        double energy = mass_of_particle * vel2 / sqrt(1 - vel2);
+        double e_exact = particle_lorentz_factor * mass_of_particle * particle_velocity() * particle_velocity();
         double x_exact[4];
         exact_particle_position(state.x[0], x_exact);
         double exact_phase = atan2(x_exact[2], x_exact[1]);
         double phase       = atan2(state.x[2], state.x[1]);
-        fprintf(outfile, "%f %f %f\n", state.x[0], exact_phase, phase);
+        fprintf(outfile, "%f %f %f\n", state.x[0], e_exact, energy);
         //fprintf(outfile, "%f %f %f %f %f\n", state.x[0], x_exact[1], x_exact[2], state.x[1], state.x[2]);
     }
     fclose(outfile);
