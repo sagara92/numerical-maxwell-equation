@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include <math.h>
-#define num_steps_per_orbit 300
+#define num_steps_per_orbit 80
 
 static const double speed_of_light          =  1.0;
 static const double tfinal                  =  4.0 * M_PI;
@@ -40,60 +40,108 @@ void sum(const double a[4], const double b[4], double c[4])
     }
 }
 
-void func(const double t,const double u_n[4], const double E[4], const double B[4], double force[4])
+void time_derivative_v(const double E[4], const double B[4], const double x[4], const double v_n[4], double dvdt[4])
 {
     double e = charge_of_particle;
     double m = mass_of_particle;
-    double q_to_m = e / m;
+    double q_to_m = e / m / v_n[0];
     double v_cross_B[4];
 
-    cross(u_n, B, v_cross_B);
+    cross(v_n, B, v_cross_B);
     for (int d = 1; d <= 3; ++d)
       {
-          force[d] = q_to_m * (E[d] + v_cross_B[d]);
+          dvdt[d] = q_to_m * (E[d] + v_cross_B[d]);
       }
 }
 
-
-void push_particle(const double E[4], const double B[4], const double dt, double x[4], double u_n[4])
+void time_derivative_x(const double E[4], const double B[4], const double x[4], const double v_n[4], double dxdt[4])
 {
-    double k1[4], k2[4], k3[4], k4[4], ktemp[4], unpk[4];
-    
-    func(x[0], u_n, E, B, k1); //k1 calculation
+    for (int d = 1; d <= 3; ++d)
+     {
+         dxdt[d] = v_n[d] / v_n[0];
+     }
+}
+
+
+void push_particle(const double E[4], const double B[4], double x[4], double v_n[4], const double dt)
+{
+    double dvdt[4], dxdt[4], x1[4], v_n1[4];
+    v_n1[0] = v_n[0];
+    double dx1[4], dx2[4], dx3[4], dx4[4], dv1[4], dv2[4], dv3[4], dv4[4];
+    time_derivative_x(E, B, x, v_n, dxdt);
     for (int d = 1; d <= 3; ++d)
     {
-        ktemp[d] = k1[d] * dt * 0.5;
+        dx1[d] = dxdt[d] * dt;
     }
-    
-    sum(u_n, ktemp, unpk); //redefining velocity and time for k2
-    x[0] += dt * 0.5;
-
-    func(x[0], unpk, E, B, k2); //k2 calculation
     for (int d = 1; d <= 3; ++d)
     {
-        ktemp[d] = k2[d] * dt * 0.5;
+        x1[d] = x[d] + 0.5 * dx1[d];
     }
-
-    sum(u_n, ktemp, unpk); // redefining velocity for k3
-
-    func(x[0], unpk, E, B, k3); //k3 calculation
+    time_derivative_v(E, B, x1, v_n, dvdt);
     for (int d = 1; d <= 3; ++d)
     {
-        ktemp[d] = k3[d] * dt;
+        dv1[d] = dvdt[d] * dt;
     }
-
-    sum(u_n, ktemp, unpk); //redefining velocity and time for k4
-    x[0] += dt * 0.5;
-
-    func(x[0], unpk, E, B, k4);//k4 calculation
-    //printf("%f %f %f %f\n%f\n", u_n[0], u_n[1], u_n[2], u_n[3], sqrt(dot(u_n,u_n)));
-    for (int d = 1; d <= 3; ++d) //updating the position using the velocity at time t
-        x[d] += dt * u_n[d] * u_n[0];
-
-    for (int d = 0; d <= 3; ++d) // updating the velocity for time t + dt
+    for (int d = 1; d <= 3; ++d)
     {
-        u_n[d] += dt * (k1[d] + 2.0 * k2[d] + 2.0 * k3[d] + k4[d]) / 6.0;
+        v_n1[d] = v_n[d] + 0.5 * dv1[d];
     }
+    time_derivative_x(E, B, x1, v_n1, dxdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dx2[d] = dxdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        x1[d] = x[d] + 0.5 * dx2[d];
+    }
+    time_derivative_v(E, B, x1, v_n1, dvdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dv2[d] = dvdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        v_n1[d] = v_n[d] + 0.5 * dv2[d];
+    }
+    time_derivative_x(E, B, x1, v_n1, dxdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dx3[d] = dxdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        x1[d] = x[d] + 1.0 * dx3[d];
+    }
+    time_derivative_v(E, B, x1, v_n1, dvdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dv3[d] = dvdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        v_n1[d] = v_n[d] + 1.0 * dv3[d];
+    }
+    time_derivative_x(E, B, x1, v_n1, dxdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dx4[d] = dxdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        x1[d] = x[d] + 1.0 * dx4[d];
+    }
+    time_derivative_v(E, B, x1, v_n1, dvdt);
+    for (int d = 1; d <= 3; ++d)
+    {
+        dv4[d] = dvdt[d] * dt;
+    }
+    for (int d = 1; d <= 3; ++d)
+    {
+        x[d]   += (dx1[d] + dx2[d] * 2.0 + dx3[d] * 2.0 + dx4[d]) / 6.0;
+        v_n[d] += (dv1[d] + dv2[d] * 2.0 + dv3[d] * 2.0 + dv4[d]) / 6.0;
+    }
+
     x[0] += dt;
 }
 
@@ -104,7 +152,7 @@ void push_particle(const double E[4], const double B[4], const double dt, double
 struct Particle
 {
     double x[4];   // position at t
-    double u_n[4]; // velocity at t
+    double v_n[4]; // velocity at t
 };
 
 
@@ -152,8 +200,8 @@ void exact_particle_velocity(double t, double velocity[4])
 {
     double g = particle_lorentz_factor;
     velocity[0] = g;
-    velocity[1] = particle_velocity() * sin(larmor_frequency() * t) * -1.0;  //i removed g *   
-    velocity[2] = particle_velocity() * cos(larmor_frequency() * t) * +1.0;  //i removed g * 
+    velocity[1] = g * particle_velocity() * sin(larmor_frequency() * t) * -1.0;
+    velocity[2] = g * particle_velocity() * cos(larmor_frequency() * t) * +1.0;
     velocity[3] = 0.0;
 }
 
@@ -166,8 +214,8 @@ struct Particle initial_state()
 
     double dt = larmor_period() / num_steps_per_orbit;
 
-    exact_particle_position(state.x[0] * dt, state.x);
-    exact_particle_velocity(state.x[0] * dt, state.u_n);
+    exact_particle_position(state.x[0], state.x);
+    exact_particle_velocity(state.x[0], state.v_n);
 
     return state;
 }
@@ -176,7 +224,7 @@ struct Particle advance(struct Particle state)
 {
     double dt = larmor_period() / num_steps_per_orbit;
 
-    push_particle(electric_field, magnetic_field, dt, state.x, state.u_n);
+    push_particle(electric_field, magnetic_field, state.x, state.v_n, dt);
 
     return state;
 }
@@ -194,14 +242,14 @@ int main()
     while (state.x[0] < tfinal)
     {
         state = advance(state);
-        double vel2 = dot(state.u_n, state.u_n);
-        double energy = mass_of_particle * vel2 / sqrt(1 - vel2);
+        double vel2 = dot(state.v_n, state.v_n);
+        double energy = 0.5 * mass_of_particle * vel2;
         double e_exact = particle_lorentz_factor * mass_of_particle * particle_velocity() * particle_velocity();
         double x_exact[4];
         exact_particle_position(state.x[0], x_exact);
         double exact_phase = atan2(x_exact[2], x_exact[1]);
         double phase       = atan2(state.x[2], state.x[1]);
-        fprintf(outfile, "%f %f %f\n", state.x[0], e_exact, energy);
+        fprintf(outfile, "%f %f %f\n", state.x[0], exact_phase, phase);
         //fprintf(outfile, "%f %f %f %f %f\n", state.x[0], x_exact[1], x_exact[2], state.x[1], state.x[2]);
     }
     fclose(outfile);
