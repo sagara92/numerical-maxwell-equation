@@ -31,6 +31,27 @@ double dot(const double a[4], const double b[4])
     return a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 }
 
+
+
+
+// ============================================================================
+void electric_and_magnetic_fields(const double x[4], double E[4], double B[4])
+{
+    E[0] = 0.0;
+    E[1] = 0.0;
+    E[2] = 0.0;
+    E[3] = 0.0;
+
+    B[0] = 0.0;
+    B[1] = 0.0;
+    B[2] = 0.0;
+    B[3] = 1.0;
+}
+
+
+
+
+// ============================================================================
 double lorentz_factor(const double u[4]) // JJZ: ADDED THIS FUNCTION: u[0] SHOULD NEVER STORE ANYTHING,
                                          // LORENTZ FACTOR SHOULD BE DERIVED INSTEAD. AVOIDS THE NEED TO
                                          // SYNCHRONIZE LOGICALLY REDUNDANT DATA, A MAJOR SOURCE OF BUGS.
@@ -38,14 +59,16 @@ double lorentz_factor(const double u[4]) // JJZ: ADDED THIS FUNCTION: u[0] SHOUL
     return sqrt(1.0 + dot(u, u));
 }
 
-void time_derivative_u(const double E[4], const double B[4], const double x[4], const double u[4], double dudt[4])
+void time_derivative_u(const double x[4], const double u[4], double dudt[4])
 {
     double e = charge_of_particle;
     double m = mass_of_particle;
 
-
     double q_to_m = e / m;
     double u_cross_B[4];
+
+    double E[4], B[4];
+    electric_and_magnetic_fields(x, E, B);
 
     cross(u, B, u_cross_B);
 
@@ -55,7 +78,7 @@ void time_derivative_u(const double E[4], const double B[4], const double x[4], 
     }
 }
 
-void time_derivative_x(const double E[4], const double B[4], const double x[4], const double u[4], double dxdt[4])
+void time_derivative_x(const double x[4], const double u[4], double dxdt[4])
 {
     dxdt[0] = 1.0; // JJZ: dt/dt = 1.0
 
@@ -65,7 +88,7 @@ void time_derivative_x(const double E[4], const double B[4], const double x[4], 
     }
 }
 
-void push_particle(const double E[4], const double B[4], double x0[4], double u0[4], const double dt)
+void push_particle(double x0[4], double u0[4], const double dt)
 {
     double x1[4], x2[4], x3[4];
     double u1[4], u2[4], u3[4];
@@ -75,8 +98,8 @@ void push_particle(const double E[4], const double B[4], double x0[4], double u0
 
     // STEP 1
     // ----------------------------------
-    time_derivative_x(E, B, x0, u0, dxdt0);
-    time_derivative_u(E, B, x0, u0, dudt0);
+    time_derivative_x(x0, u0, dxdt0);
+    time_derivative_u(x0, u0, dudt0);
 
     for (int d = 0; d <= 3; ++d) // JJZ: NOTE THE LOOP STARTS AT 0: NECESSARY TO UPDATE TIME
     {
@@ -87,8 +110,8 @@ void push_particle(const double E[4], const double B[4], double x0[4], double u0
 
     // STEP 2
     // ----------------------------------
-    time_derivative_x(E, B, x1, u1, dxdt1);
-    time_derivative_u(E, B, x1, u1, dudt1);
+    time_derivative_x(x1, u1, dxdt1);
+    time_derivative_u(x1, u1, dudt1);
 
     for (int d = 0; d <= 3; ++d)
     {
@@ -99,8 +122,8 @@ void push_particle(const double E[4], const double B[4], double x0[4], double u0
 
     // STEP 3
     // ----------------------------------
-    time_derivative_x(E, B, x2, u2, dxdt2);
-    time_derivative_u(E, B, x2, u2, dudt2);
+    time_derivative_x(x2, u2, dxdt2);
+    time_derivative_u(x2, u2, dudt2);
 
     for (int d = 0; d <= 3; ++d)
     {
@@ -111,8 +134,8 @@ void push_particle(const double E[4], const double B[4], double x0[4], double u0
 
     // STEP 4
     // ----------------------------------
-    time_derivative_x(E, B, x3, u3, dxdt3);
-    time_derivative_u(E, B, x3, u3, dudt3);
+    time_derivative_x(x3, u3, dxdt3);
+    time_derivative_u(x3, u3, dudt3);
 
 
     // UPDATE POSITION AND GAMMA-BETA
@@ -209,7 +232,7 @@ struct Particle advance(struct Particle state)
 {
     double dt = larmor_period() / num_steps_per_orbit;
 
-    push_particle(electric_field, magnetic_field, state.x, state.u, dt);
+    push_particle(state.x, state.u, dt);
 
     return state;
 }
@@ -221,16 +244,14 @@ struct Particle advance(struct Particle state)
 int main()
 {
     struct Particle state = initial_state();
-    double e_exact = mass_of_particle * dot(state.u, state.u) / particle_lorentz_factor;
-    
+    double e_exact = mass_of_particle * (particle_lorentz_factor - 1.0);
 
     FILE* outfile = fopen("updated-solution.dat", "w");
 
     while (state.x[0] < tfinal)
     {
         state = advance(state);
-        double vel2 = dot(state.u, state.u);
-        double energy = mass_of_particle * vel2 / lorentz_factor(state.u);
+        double energy = mass_of_particle * (lorentz_factor(state.u) - 1.0);
         double x_exact[4];
         exact_particle_position(state.x[0], x_exact);
         double exact_phase = atan2(x_exact[2], x_exact[1]);
