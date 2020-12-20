@@ -36,7 +36,11 @@ void electric_and_magnetic_fields(const double x[4], double E[4], double B[4])
 {
     E[0] = 0.0;
     E[1] = 0.0;
+<<<<<<< HEAD
     E[2] = 0.3;
+=======
+    E[2] = 0.0;
+>>>>>>> bf6ade7401bb1327b0ca2b39e0ea990d51d61521
     E[3] = 0.0;
 
     B[0] = 0.0;
@@ -234,7 +238,10 @@ int main()
 {
     struct Particle state = initial_state();
     double e_exact = mass_of_particle * (particle_lorentz_factor - 1.0);
+<<<<<<< HEAD
     double x_exact[4];
+=======
+>>>>>>> bf6ade7401bb1327b0ca2b39e0ea990d51d61521
 
     FILE* outfile = fopen("updated-solution.dat", "w");
 
@@ -242,6 +249,10 @@ int main()
     {
         state = advance(state);
         double energy = mass_of_particle * (lorentz_factor(state.u) - 1.0);
+<<<<<<< HEAD
+=======
+        double x_exact[4];
+>>>>>>> bf6ade7401bb1327b0ca2b39e0ea990d51d61521
         exact_particle_position(state.x[0], x_exact);
         //double exact_phase = atan2(x_exact[2], x_exact[1]);
         //double phase       = atan2(state.x[2], state.x[1]);
